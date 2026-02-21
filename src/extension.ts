@@ -7,6 +7,8 @@ import { imgAltRule } from "./engine/rules/imgAltRule";
 import { IssuesProvider } from "./views/issuesProvider";
 import { circularDepsRule } from "./engine/rules/circularDepsRule";
 import { calculateHealthScore } from "./engine/healthScore";
+import { labelHtmlForRule } from "./engine/rules/htmlRule";
+import { tabIndexMisuseRule } from "./engine/rules/tabIndexRule";
 import { inlineFunctionPropRule } from "./engine/rules/inlineFunctionPropRule";
 import { jsxLiteralPropRule } from "./engine/rules/jsxLiteralPropRule";
 import { indexAsKeyRule } from "./engine/rules/indexAsKeyRule";

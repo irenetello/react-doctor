@@ -13,6 +13,9 @@ import { inlineFunctionPropRule } from "./engine/rules/inlineFunctionPropRule";
 import { jsxLiteralPropRule } from "./engine/rules/jsxLiteralPropRule";
 import { indexAsKeyRule } from "./engine/rules/indexAsKeyRule";
 import { contextProviderValueRule } from "./engine/rules/contextProviderValueRule";
+import { missingAnchorHrefRule } from "./engine/rules/missingAnchorHrefRule";
+import { buttonAccessibleNameRule } from "./engine/rules/buttonAccessibleNameRule";
+import { keyboardNavigationRule } from "./engine/rules/keyboardNavigationRule";
 
 let lastIssues: Issue[] = [];
 
@@ -215,6 +218,7 @@ export function activate(context: vscode.ExtensionContext) {
           title: "React Doctor scanning...",
         },
         async () => {
+
           const prev = baseline;
           const { issues, snap } = await runScanAndUpdateUI(provider, ctx);
 

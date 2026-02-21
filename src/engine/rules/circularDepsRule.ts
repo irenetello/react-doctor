@@ -1,5 +1,5 @@
 import * as path from "path";
-import { Issue, Rule } from "../types";
+import { Issue, Rule, ScannedFile } from "../types";
 
 const IMPORT_RE =
   /import\s+(?:[^'"]+from\s+)?["']([^"']+)["']|require\(["']([^"']+)["']\)/g;
@@ -52,8 +52,20 @@ export const circularDepsRule: Rule = {
         }
       }
     }
-    
-    const getIssues = (dependency: string, path: string[], visited: Set<string>): Issue[] => {
+
+    let issues: Issue[] = [];
+    for (const dependant in graphAll) {
+      if (graphAll[dependant][dependant]) {
+        const newIssues = getIssues(dependant, [], new Set(), files, graph);
+        issues = [...issues, ...newIssues];
+      }
+    }
+
+    return issues;
+  },
+};
+
+export const getIssues = (dependency: string, path: string[], visited: Set<string>, files: ScannedFile[], graph: Graph): Issue[] => {
       const issues: Issue[] = [];
 
       // If we've returned to the starting dependency, we found a cycle
@@ -90,32 +102,18 @@ export const circularDepsRule: Rule = {
 
       // Recursively explore all dependencies
       for (const dep in graph[dependency] || {}) {
-        issues.push(...getIssues(dep, [...path, dependency], new Set(visited)));
+        const newIssues = getIssues(dep, [...path, dependency], new Set(visited), files, graph);
+        issues.push(...newIssues);
       }
 
       return issues;
     };
 
-    console.log({graphAll, graph, files: `${files}`});
-
-
-    let issues: Issue[] = [];
-    for (const dependant in graphAll) {
-      if (graphAll[dependant][dependant]) {
-        const newIssues = getIssues(dependant, [], new Set());
-        issues = [...issues, ...newIssues];
-      }
-    }
-
-    return issues;
-  },
-};
-
 function normalize(p: string) {
   return p.replace(/\\/g, "/");
 }
 
-function resolveRelativeToKnownFile(
+export function resolveRelativeToKnownFile(
   fromRel: string,
   raw: string,
   files: { relPath: string }[]
@@ -144,7 +142,7 @@ function absPathForRel(rel: string, files: { relPath: string; path: string }[]) 
   return files.find((f) => normalize(f.relPath) === norm)?.path ?? rel;
 }
 
-function findImportLine(fromRel: string, toRel: string, lines: string[]) {
+export function findImportLine(fromRel: string, toRel: string, lines: string[]) {
   const fromDir = normalize(path.dirname(fromRel));
   const toNorm = normalize(toRel);
 

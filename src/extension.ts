@@ -216,22 +216,6 @@ export function activate(context: vscode.ExtensionContext) {
           title: "React Doctor scanning...",
         },
         async () => {
-          const issues = await scanWorkspace(
-            [
-              bigFileRule,
-              imgAltRule,
-              circularDepsRule,
-              inlineFunctionPropRule,
-              jsxLiteralPropRule,
-              indexAsKeyRule,
-              contextProviderValueRule,
-              missingAnchorHrefRule,
-              buttonAccessibleNameRule,
-              keyboardNavigationRule
-            ],
-            ctx
-          );
-          const health = calculateHealthScore(issues);
 
           const prev = baseline;
           const { issues, snap } = await runScanAndUpdateUI(provider, ctx);

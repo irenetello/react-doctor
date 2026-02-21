@@ -2,6 +2,23 @@ import { Issue, Rule } from "../types";
 
 const IMG_TAG = /<img\b[^>]*>/gi;
 
+/**
+ * Rule that detects `<img>` tags missing an `alt` attribute.
+ *
+ * Missing alt text reduces accessibility for users relying on screen readers.
+ * This rule flags image tags that do not appear to provide any `alt` value.
+ *
+ * Detection strategy:
+ * - Only scans `.tsx` and `.jsx` files.
+ * - Finds all `<img ...>` tags with a regex.
+ * - For each tag, checks whether an `alt=` attribute is present.
+ * - Reports one issue per missing-`alt` match at the computed line number.
+ *
+ * Generated issue details:
+ * - `id`: combines rule id, file relative path, and line number.
+ * - `severity`: `WARN`.
+ * - `message`: indicates that an `<img>` is missing `alt`.
+ */
 export const imgAltRule: Rule = {
   id: "img-alt",
   title: "img tag missing alt",

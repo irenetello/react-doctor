@@ -30,7 +30,7 @@ export async function scanWorkspace(rules: Rule[], ctx: RuleContext): Promise<Is
     issues.push(...(await rule.run(ctx, scanned)));
   }
 
-  const order = { ERROR: 0, WARN: 1, INFO: 2 } as const;
+  const order = { ERROR: 2, WARN: 1, INFO: 0 } as const;
   issues.sort((a, b) => order[a.severity] - order[b.severity] || a.filePath.localeCompare(b.filePath));
   return issues;
 }

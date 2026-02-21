@@ -32,7 +32,11 @@
       {
         "command": "reactDoctor.fixImgAlt",
         "title": "React Doctor: Fix img alt"
-      }
+      },
+      {
+        "command": "reactDoctor.toggleInfo",
+        "title": "React Doctor: Toggle INFO"
+}
     ],
     "viewsContainers": {
       "activitybar": [

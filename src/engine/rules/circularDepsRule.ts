@@ -16,12 +16,13 @@ export const circularDepsRule: Rule = {
       const matches = f.content.matchAll(IMPORT_RE);
       for (const m of matches) {
         const raw = m[1] || m[2];
-        if (!raw) continue;
+        if (!raw) {continue;}
 
-        if (!raw.startsWith(".")) continue;
+        if (!raw.startsWith(".")) {continue;}
 
         const resolved = resolveRelativeToKnownFile(f.relPath, raw, files);
-        if (resolved) deps.push(resolved);
+        if (resolved) {deps.push(resolved);}
+
       }
 
       graph.set(normalize(f.relPath), deps);
@@ -44,7 +45,7 @@ export const circularDepsRule: Rule = {
 
         if (startFile && nextRel) {
           const idx = findImportLine(startRel, nextRel, startFile.lines);
-          if (idx >= 0) line = idx + 1;
+          if (idx >= 0) {line = idx + 1;}
         }
 
         issues.push({
@@ -58,7 +59,7 @@ export const circularDepsRule: Rule = {
         return;
       }
 
-      if (visited.has(node)) return;
+      if (visited.has(node)) {return;}
 
       visited.add(node);
       stack.add(node);
@@ -131,7 +132,7 @@ function findImportLine(fromRel: string, toRel: string, lines: string[]) {
       const reImport = new RegExp(`\\bfrom\\s+['"]${esc}['"]`);
       const reReq = new RegExp(`\\brequire\\(\\s*['"]${esc}['"]\\s*\\)`);
 
-      if (reImport.test(l) || reReq.test(l)) return i;
+      if (reImport.test(l) || reReq.test(l)) {return i;}
     }
   }
 

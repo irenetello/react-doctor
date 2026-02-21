@@ -9,7 +9,7 @@ export const imgAltRule: Rule = {
     const issues: Issue[] = [];
 
     for (const f of files) {
-      if (!f.relPath.endsWith(".tsx") && !f.relPath.endsWith(".jsx")) continue;
+      if (!f.relPath.endsWith(".tsx") && !f.relPath.endsWith(".jsx")) {continue;}
 
       const matches = f.content.matchAll(IMG_TAG);
       for (const m of matches) {

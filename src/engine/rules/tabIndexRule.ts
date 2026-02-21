@@ -1,5 +1,15 @@
 import { Issue, Rule } from "../types";
 
+/**
+ * Rule: tabIndex misuse (positive values)
+ *
+ * This rule scans JSX/TSX files for `tabIndex` props with literal positive numbers.
+ * It uses a regex (`TAB_INDEX`) to find `tabIndex={...}` or `tabIndex="..."` assignments.
+ * The helper `extractNumericValue` converts matched values to numbers and ignores variables/expressions.
+ * If a positive number (>0) is found, an issue is recorded with file path and line number.
+ * Purpose: ensure accessible keyboard navigation by recommending 0 or -1 instead of positive tabIndex.
+ */
+
 const TAB_INDEX = /\btabIndex\s*=\s*(\{[^}]+\}|["'][^"']+["'])/gi;
 
 function extractNumericValue(raw: string): number | null {

@@ -7,6 +7,10 @@ import { imgAltRule } from "./engine/rules/imgAltRule";
 import { IssuesProvider } from "./views/issuesProvider";
 import { circularDepsRule } from "./engine/rules/circularDepsRule";
 import { calculateHealthScore } from "./engine/healthScore";
+import { inlineFunctionPropRule } from "./engine/rules/inlineFunctionPropRule";
+import { jsxLiteralPropRule } from "./engine/rules/jsxLiteralPropRule";
+import { indexAsKeyRule } from "./engine/rules/indexAsKeyRule";
+import { contextProviderValueRule } from "./engine/rules/contextProviderValueRule";
 import { missingAnchorHrefRule } from "./engine/rules/missingAnchorHrefRule";
 import { buttonAccessibleNameRule } from "./engine/rules/buttonAccessibleNameRule";
 import { keyboardNavigationRule } from "./engine/rules/keyboardNavigationRule";
@@ -16,6 +20,12 @@ let lastIssues: Issue[] = [];
 export function activate(context: vscode.ExtensionContext) {
   const provider = new IssuesProvider();
   vscode.window.registerTreeDataProvider("reactDoctorIssues", provider);
+
+  context.subscriptions.push(
+  vscode.commands.registerCommand("reactDoctor.toggleInfo", () => {
+    provider.toggleShowAllInfo();
+  })
+);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("reactDoctor.scan", async () => {
@@ -34,12 +44,21 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: "React Doctor scanning..." },
         async () => {
-			const issues = await scanWorkspace(
-
-      
-				[bigFileRule, imgAltRule, circularDepsRule, missingAnchorHrefRule, buttonAccessibleNameRule, keyboardNavigationRule],
-				ctx
-			);
+          const issues = await scanWorkspace(
+            [
+              bigFileRule,
+              imgAltRule,
+              circularDepsRule,
+              inlineFunctionPropRule,
+              jsxLiteralPropRule,
+              indexAsKeyRule,
+              contextProviderValueRule,
+              missingAnchorHrefRule,
+              buttonAccessibleNameRule,
+              keyboardNavigationRule
+            ],
+            ctx
+          );
           const health = calculateHealthScore(issues);
 
 		  provider.setIssues(issues, health);
@@ -135,7 +154,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
   vscode.commands.registerCommand("reactDoctor.fixImgAlt", async (node: any) => {
-    // En menú contextual, VS Code pasa el TreeItem (IssueItem), no el Issue plano
     const issue: Issue | undefined = node?.issue ?? node;
 
     if (!issue?.filePath) {
@@ -156,7 +174,6 @@ export function activate(context: vscode.ExtensionContext) {
     const line = doc.lineAt(lineIndex);
     const lineText = line.text;
 
-    // Guard: si ya tiene alt, no hacemos nada
     if (!lineText.includes("<img")) {
       vscode.window.showInformationMessage("React Doctor: no <img> found on that line.");
       return;
@@ -166,7 +183,6 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Inserta alt justo después de <img
     const newLine = lineText.replace(/<img\b/, '<img alt=""');
 
     await editor.edit((editBuilder) => {

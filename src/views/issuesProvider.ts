@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import { Issue, Severity } from "../engine/types";
 
-type Node = GroupItem | IssueItem | HealthItem;
 type Health = { score: number; label: string } | null;
+
+type Node = GroupItem | IssueItem | HealthItem | ToggleInfoItem;
 
 export class IssuesProvider implements vscode.TreeDataProvider<Node> {
   private _onDidChangeTreeData = new vscode.EventEmitter<Node | undefined>();
@@ -11,8 +12,22 @@ export class IssuesProvider implements vscode.TreeDataProvider<Node> {
   private issues: Issue[] = [];
   private health: Health = null;
 
+  private showAllInfo = false;
+
+  toggleShowAllInfo() {
+    this.showAllInfo = !this.showAllInfo;
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
   setIssues(issues: Issue[], health?: Health) {
-    this.issues = issues;
+    const seen = new Set<string>();
+    this.issues = issues.filter((i) => {
+      const k = `${i.severity}|${i.ruleId}|${i.filePath}|${i.line ?? ""}|${i.message}`;
+      if (seen.has(k)) {return false;}
+      seen.add(k);
+      return true;
+    });
+
     this.health = health ?? null;
     this._onDidChangeTreeData.fire(undefined);
   }
@@ -38,6 +53,25 @@ export class IssuesProvider implements vscode.TreeDataProvider<Node> {
     }
 
     if (element instanceof GroupItem) {
+      if (element.severity === "INFO") {
+        const total = element.issues.length;
+        const limit = 20;
+
+        const visible = this.showAllInfo ? element.issues : element.issues.slice(0, limit);
+
+        const nodes: Node[] = visible.map((i) => new IssueItem(i));
+
+        if (total > limit) {
+          nodes.unshift(
+            new ToggleInfoItem(
+              this.showAllInfo ? `Show less (top ${limit})` : `Show all INFO (${total})`,
+              this.showAllInfo ? "collapse" : "expand"
+            )
+          );
+        }
+
+        return nodes;
+      }
       return element.issues.map((i) => new IssueItem(i));
     }
 
@@ -65,6 +99,21 @@ class IssueItem extends vscode.TreeItem {
   }
 }
 
+class ToggleInfoItem extends vscode.TreeItem {
+  constructor(label: string, mode: "expand" | "collapse") {
+    super(label, vscode.TreeItemCollapsibleState.None);
+    this.command = {
+      command: "reactDoctor.toggleInfo",
+      title: "Toggle INFO",
+    };
+    this.contextValue = "toggleInfo";
+    this.iconPath =
+      mode === "expand"
+        ? new vscode.ThemeIcon("chevron-down")
+        : new vscode.ThemeIcon("chevron-up");
+  }
+}
+
 function shortPath(p: string) {
   const parts = p.split(/[/\\]/);
   return parts.slice(-2).join("/");
@@ -74,5 +123,7 @@ class HealthItem extends vscode.TreeItem {
   constructor(health: { score: number; label: string }) {
     super(`Health Score: ${health.score}/100 — ${health.label}`, vscode.TreeItemCollapsibleState.None);
     this.iconPath = new vscode.ThemeIcon("heart");
+    this.tooltip = "Weighted score by severity. Low-severity issues use logarithmic decay to prevent noise dominating the metric.";
+    this.description = "Weighted severity + log decay";
   }
 }

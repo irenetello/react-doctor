@@ -1,5 +1,18 @@
 import { Issue, Rule } from "../types";
 
+/**
+ * Rule that detects files with too many lines.
+ *
+ * Compares `f.lines.length` against `ctx.maxFileLines` and, when the limit is
+ * exceeded, creates a `WARN` issue to encourage splitting the file into
+ * smaller pieces (for example, components or hooks).
+ *
+ * Generated issue details:
+ * - `id`: combines the rule id with the file relative path.
+ * - `filePath`: absolute path of the analyzed file.
+ * - `line`: reported as line 1 as a general file-level reference.
+ * - `ruleId`: reference to this rule (`big-file`).
+ */
 export const bigFileRule: Rule = {
   id: "big-file",
   title: "File too large",

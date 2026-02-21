@@ -1,17 +1,19 @@
 import * as path from "path";
-import { Issue, Rule } from "../types";
+import { Issue, Rule, ScannedFile } from "../types";
 
 const IMPORT_RE =
   /import\s+(?:[^'"]+from\s+)?["']([^"']+)["']|require\(["']([^"']+)["']\)/g;
+
+type Graph = {[dependantFile: string]: {[dependencyFile: string]: boolean}}
 
 export const circularDepsRule: Rule = {
   id: "circular-deps",
   title: "Circular dependency",
   async run(_ctx, files) {
-    const graph = new Map<string, string[]>();
+    const graph: Graph = {};
 
     for (const f of files) {
-      const deps: string[] = [];
+      const deps: {[dependencyFile: string]: boolean} = {};
 
       const matches = f.content.matchAll(IMPORT_RE);
       for (const m of matches) {
@@ -21,70 +23,97 @@ export const circularDepsRule: Rule = {
         if (!raw.startsWith(".")) {continue;}
 
         const resolved = resolveRelativeToKnownFile(f.relPath, raw, files);
-        if (resolved) {deps.push(resolved);}
-
-      }
-
-      graph.set(normalize(f.relPath), deps);
-    }
-
-    const issues: Issue[] = [];
-    const visited = new Set<string>();
-    const stack = new Set<string>();
-
-    function dfs(node: string, pathStack: string[]) {
-      if (stack.has(node)) {
-        const cycle = [...pathStack, node];
-        const startRel = cycle[0];
-        const nextRel = cycle[1];
-
-        const startFile = files.find(
-          (f) => normalize(f.relPath) === normalize(startRel)
-        );
-        let line: number | undefined = undefined;
-
-        if (startFile && nextRel) {
-          const idx = findImportLine(startRel, nextRel, startFile.lines);
-          if (idx >= 0) {line = idx + 1;}
+        if (resolved) {
+          deps[resolved] = true;
         }
-
-        issues.push({
-          id: `cycle:${cycle.join("->")}`,
-          severity: "ERROR",
-          message: `Circular dependency: ${cycle.join(" → ")}`,
-          filePath: absPathForRel(startRel, files),
-          line,
-          ruleId: "circular-deps",
-        });
-        return;
       }
 
-      if (visited.has(node)) {return;}
-
-      visited.add(node);
-      stack.add(node);
-
-      const neighbors = graph.get(node) || [];
-      for (const n of neighbors) {
-        dfs(n, [...pathStack, node]);
-      }
-
-      stack.delete(node);
+      graph[normalize(f.relPath)] = deps;
     }
 
-    for (const node of graph.keys()) {
-      dfs(node, []);
+    const graphAll = { ...graph };
+    let hasChanges = true;
+    while (hasChanges) {
+      hasChanges = false;
+      for (const dependant in graphAll) {
+        let initialLength = Object.keys(graphAll[dependant]).length;
+        let dependenciesOfDependencies = {
+          ...graphAll[dependant],
+        };
+        for (const dependantOfDependant in graphAll[dependant]) {
+          dependenciesOfDependencies = {
+            ...dependenciesOfDependencies,
+            ...graphAll[dependantOfDependant] || {},
+          };
+        }
+        if (Object.keys(dependenciesOfDependencies).length !== initialLength) {
+          hasChanges = true;
+          graphAll[dependant] = dependenciesOfDependencies;
+        }
+      }
+    }
+
+    let issues: Issue[] = [];
+    for (const dependant in graphAll) {
+      if (graphAll[dependant][dependant]) {
+        const newIssues = getIssues(dependant, [], new Set(), files, graph);
+        issues = [...issues, ...newIssues];
+      }
     }
 
     return issues;
   },
 };
 
+export const getIssues = (dependency: string, path: string[], visited: Set<string>, files: ScannedFile[], graph: Graph): Issue[] => {
+      const issues: Issue[] = [];
+
+      // If we've returned to the starting dependency, we found a cycle
+      if (path.length > 0 && dependency === path[0]) {
+        const cycle = [...path, dependency];
+        const startFile = files.find(
+          (f) => normalize(f.relPath) === normalize(cycle[0])
+        );
+        let line: number | undefined = undefined;
+
+        if (startFile && cycle[1]) {
+          const idx = findImportLine(cycle[0], cycle[1], startFile.lines);
+          if (idx >= 0) {
+            line = idx + 1;
+          }
+        }
+
+        return [{
+          id: `cycle:${cycle.join("->")}`,
+          severity: "ERROR",
+          message: `Circular dependency: ${cycle.join(" → ")}`,
+          filePath: absPathForRel(cycle[0], files),
+          line,
+          ruleId: "circular-deps",
+        }];
+      }
+
+      // Avoid infinite recursion
+      if (visited.has(dependency)) {
+        return [];
+      }
+
+      visited.add(dependency);
+
+      // Recursively explore all dependencies
+      for (const dep in graph[dependency] || {}) {
+        const newIssues = getIssues(dep, [...path, dependency], new Set(visited), files, graph);
+        issues.push(...newIssues);
+      }
+
+      return issues;
+    };
+
 function normalize(p: string) {
   return p.replace(/\\/g, "/");
 }
 
-function resolveRelativeToKnownFile(
+export function resolveRelativeToKnownFile(
   fromRel: string,
   raw: string,
   files: { relPath: string }[]
@@ -113,7 +142,7 @@ function absPathForRel(rel: string, files: { relPath: string; path: string }[]) 
   return files.find((f) => normalize(f.relPath) === norm)?.path ?? rel;
 }
 
-function findImportLine(fromRel: string, toRel: string, lines: string[]) {
+export function findImportLine(fromRel: string, toRel: string, lines: string[]) {
   const fromDir = normalize(path.dirname(fromRel));
   const toNorm = normalize(toRel);
 

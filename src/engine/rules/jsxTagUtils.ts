@@ -56,6 +56,7 @@ export function getAttribute(node: ts.JsxOpeningLikeElement, attr: string): stri
     }
   }
   return undefined;
+}
   
 export function getOpeningTagName(content: string, idx: number): string | null {
   const lastLt = content.lastIndexOf("<", idx);

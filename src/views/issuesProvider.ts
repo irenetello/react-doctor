@@ -27,6 +27,8 @@ class IssueItem extends vscode.TreeItem {
 
     this.description = `${shortPath(issue.filePath)}${issue.line ? `:${issue.line}` : ""}`;
     this.tooltip = `${issue.ruleId}\n${issue.filePath}${issue.line ? `:${issue.line}` : ""}`;
+
+    this.contextValue = issue.ruleId; // <- clave para el menú
     this.command = { command: "reactDoctor.openIssue", title: "Open issue", arguments: [this] };
   }
 }

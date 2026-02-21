@@ -7,13 +7,15 @@
   "categories": ["Other"],
   "activationEvents": [
     "onCommand:reactDoctor.scan",
-    "onCommand:reactDoctor.openIssue"
+    "onCommand:reactDoctor.openIssue",
+        "onCommand:reactDoctor.fixImgAlt"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       { "command": "reactDoctor.scan", "title": "React Doctor: Scan workspace" },
-      { "command": "reactDoctor.openIssue", "title": "React Doctor: Open issue" }
+      { "command": "reactDoctor.openIssue", "title": "React Doctor: Open issue" },
+      { "command": "reactDoctor.fixImgAlt", "title": "React Doctor: Fix image alt attributes" }
     ],
     "viewsContainers": {
       "activitybar": [
@@ -34,6 +36,15 @@
           "description": "Warn when a file exceeds this number of lines."
         }
       }
+    },
+     "menus": {
+      "view/item/context": [
+        {
+          "command": "reactDoctor.fixImgAlt",
+          "when": "view == reactDoctorIssues && viewItem == img-alt",
+          "group": "inline"
+        }
+      ]
     }
   },
   "scripts": {

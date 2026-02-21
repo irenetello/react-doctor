@@ -35,7 +35,7 @@ export const contextProviderValueRule: Rule = {
         issues.push({
           id: `${contextProviderValueRule.id}:${f.relPath}:${line}`,
           severity: "WARN",
-          message: "Context Provider value is created inline. Wrap it in useMemo to avoid re-rendering all consumers.",
+          message: "Context Provider value is created inline.review if this provider re-renders frequently (wrap it in useMemo to avoid re-rendering all consumers).",
           filePath: f.path,
           line,
           ruleId: contextProviderValueRule.id,

@@ -9,35 +9,52 @@
   "categories": ["Other"],
   "activationEvents": [
     "onView:reactDoctorIssues",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascriptreact",
     "onCommand:reactDoctor.scan",
     "onCommand:reactDoctor.exportReport",
     "onCommand:reactDoctor.fixImgAlt",
-    "onCommand:react-doctor-lab.helloWorld"
+    "onCommand:reactDoctor.fixKeyIndex",
+    "onCommand:react-doctor-lab.helloWorld",
+    "onCommand:reactDoctor.fixAllSafe",
+    "onCommand:reactDoctor.resetBaseline"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "react-doctor-lab.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "reactDoctor.scan",
-        "title": "React Doctor: Scan workspace"
-      },
-      {
-        "command": "reactDoctor.exportReport",
-        "title": "React Doctor: Export report (Markdown)"
-      },
-      {
-        "command": "reactDoctor.fixImgAlt",
-        "title": "React Doctor: Fix img alt"
-      },
-      {
-        "command": "reactDoctor.toggleInfo",
-        "title": "React Doctor: Toggle INFO"
-}
-    ],
+          {
+            "command": "react-doctor-lab.helloWorld",
+            "title": "Hello World"
+          },
+          {
+            "command": "reactDoctor.scan",
+            "title": "React Doctor: Scan workspace"
+          },
+          {
+            "command": "reactDoctor.exportReport",
+            "title": "React Doctor: Export report (Markdown)"
+          },
+          {
+            "command": "reactDoctor.fixImgAlt",
+            "title": "React Doctor: Fix img alt"
+          },
+          {
+            "command": "reactDoctor.toggleInfo",
+            "title": "React Doctor: Toggle INFO"
+          },
+          {
+            "command": "reactDoctor.fixKeyIndex",
+            "title": "React Doctor: Replace key={index} with key={item.id}"
+          },
+          {
+            "command": "reactDoctor.fixAllSafe",
+            "title": "React Doctor: Fix All Safe Issues"
+          },
+          {
+            "command": "reactDoctor.resetBaseline",
+            "title": "React Doctor: Reset Baseline"
+          }
+        ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -71,6 +88,23 @@
           "command": "reactDoctor.fixImgAlt",
           "when": "view == reactDoctorIssues && viewItem == img-alt",
           "group": "inline"
+        }
+      ],
+       "view/title": [
+        {
+          "command": "reactDoctor.scan",
+          "when": "view == reactDoctorIssues",
+          "group": "navigation"
+        },
+        {
+          "command": "reactDoctor.fixAllSafe",
+          "when": "view == reactDoctorIssues",
+          "group": "navigation"
+        },
+        {
+          "command": "reactDoctor.resetBaseline",
+          "when": "view == reactDoctorIssues",
+          "group": "navigation"
         }
       ]
     }

@@ -8,6 +8,7 @@ import { IssuesProvider } from "./views/issuesProvider";
 import { circularDepsRule } from "./engine/rules/circularDepsRule";
 import { calculateHealthScore } from "./engine/healthScore";
 import { labelHtmlForRule } from "./engine/rules/htmlRule";
+import { tabIndexMisuseRule } from "./engine/rules/tabIndexRule";
 
 let lastIssues: Issue[] = [];
 
@@ -35,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const issues = await scanWorkspace(
 
       
-				[bigFileRule, imgAltRule, circularDepsRule,labelHtmlForRule],
+				[bigFileRule, imgAltRule, circularDepsRule,labelHtmlForRule, tabIndexMisuseRule],
 				ctx
 			);
           const health = calculateHealthScore(issues);

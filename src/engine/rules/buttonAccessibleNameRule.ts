@@ -1,5 +1,17 @@
 import { Issue, Rule } from "../types";
 
+/**
+ * Rule to detect <button> elements that lack an accessible name.
+ *
+ * This rule ensures that buttons have at least one of the following:
+ * - An `aria-label` attribute.
+ * - An `aria-labelledby` attribute.
+ * - A `title` attribute.
+ * - Inner text content.
+ *
+ * Issues are reported for buttons that lack all of these attributes or content,
+ * as this can lead to accessibility issues.
+ */
 export const buttonAccessibleNameRule: Rule = {
   id: "button-accessible-name",
   title: "Button without accessible name",
@@ -7,7 +19,7 @@ export const buttonAccessibleNameRule: Rule = {
     const issues: Issue[] = [];
     for (const f of files) {
 
-      if (!f.relPath.endsWith(".tsx") && !f.relPath.endsWith(".jsx")) {continue};
+      if (!f.relPath.endsWith(".tsx") && !f.relPath.endsWith(".jsx")) {continue;};
 
       const BUTTON_TAG = /<button\b[^>]*>/gi;
       const matches = f.content.matchAll(BUTTON_TAG);

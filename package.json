@@ -9,9 +9,12 @@
   "categories": ["Other"],
   "activationEvents": [
     "onView:reactDoctorIssues",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascriptreact",
     "onCommand:reactDoctor.scan",
     "onCommand:reactDoctor.exportReport",
     "onCommand:reactDoctor.fixImgAlt",
+    "onCommand:reactDoctor.fixKeyIndex",
     "onCommand:react-doctor-lab.helloWorld"
   ],
   "main": "./dist/extension.js",
@@ -36,7 +39,11 @@
       {
         "command": "reactDoctor.toggleInfo",
         "title": "React Doctor: Toggle INFO"
-}
+      },
+      {
+        "command": "reactDoctor.fixKeyIndex",
+        "title": "React Doctor: Replace key={index} with key={item.id}"
+      }
     ],
     "viewsContainers": {
       "activitybar": [

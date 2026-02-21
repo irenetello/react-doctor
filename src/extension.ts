@@ -11,6 +11,7 @@ import { inlineFunctionPropRule } from "./engine/rules/inlineFunctionPropRule";
 import { jsxLiteralPropRule } from "./engine/rules/jsxLiteralPropRule";
 import { indexAsKeyRule } from "./engine/rules/indexAsKeyRule";
 import { contextProviderValueRule } from "./engine/rules/contextProviderValueRule";
+import { KeyIndexQuickFixProvider } from "./codeActions/keyIndexQuickFixProvider";
 
 let lastIssues: Issue[] = [];
 
@@ -23,6 +24,32 @@ export function activate(context: vscode.ExtensionContext) {
     provider.toggleShowAllInfo();
   })
 );
+
+  // Quick Fix command (command-based CodeAction)
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "reactDoctor.fixKeyIndex",
+      async (uri: vscode.Uri, replaceRange: vscode.Range, itemName: string) => {
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(uri, replaceRange, `{${itemName}.id}`);
+        await vscode.workspace.applyEdit(edit);
+      },
+    ),
+  );
+
+  // Quick Fix provider (no Diagnostics API)
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      [
+        { language: "typescriptreact" },
+        { language: "javascriptreact" },
+      ],
+      new KeyIndexQuickFixProvider(),
+      {
+        providedCodeActionKinds: [KeyIndexQuickFixProvider.kind],
+      },
+    ),
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("reactDoctor.scan", async () => {

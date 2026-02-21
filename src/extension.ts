@@ -1,26 +1,59 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+import { scanWorkspace } from "./engine/scanWorkspace";
+import type { Issue, RuleContext } from "./engine/types";
+import { IssuesProvider } from "./views/issuesProvider";
+
 export function activate(context: vscode.ExtensionContext) {
+  const provider = new IssuesProvider();
+  vscode.window.registerTreeDataProvider("reactDoctorIssues", provider);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "react-doctor" is now active!');
+  context.subscriptions.push(
+    vscode.commands.registerCommand("reactDoctor.scan", async () => {
+      const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!root) {
+        vscode.window.showWarningMessage("Open a folder/workspace first.");
+        return;
+      }
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('react-doctor.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from React-Doctor!');
-	});
+      const cfg = vscode.workspace.getConfiguration("reactDoctor");
+      const ctx: RuleContext = {
+        rootPath: root,
+        maxFileLines: cfg.get("maxFileLines", 300),
+      };
 
-	context.subscriptions.push(disposable);
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: "React Doctor scanning..." },
+        async () => {
+          const issues = await scanWorkspace([], ctx); // baseline: sin reglas
+          provider.setIssues(issues);
+          vscode.window.showInformationMessage(`React Doctor: ${issues.length} issues found.`);
+        }
+      );
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("reactDoctor.openIssue", async (node: any) => {
+      const issue: Issue | undefined = node?.issue ?? node;
+
+      if (!issue?.filePath) {
+        vscode.window.showErrorMessage("React Doctor: invalid issue payload.");
+        return;
+      }
+
+      const uri = vscode.Uri.file(issue.filePath);
+      const doc = await vscode.workspace.openTextDocument(uri);
+      const editor = await vscode.window.showTextDocument(doc, { preview: true });
+
+      const lineNum = Number(issue.line);
+      if (Number.isFinite(lineNum) && lineNum > 0) {
+        const pos = new vscode.Position(lineNum - 1, 0);
+        editor.selection = new vscode.Selection(pos, pos);
+        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+      }
+    })
+  );
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}

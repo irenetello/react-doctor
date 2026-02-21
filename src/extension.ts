@@ -9,12 +9,49 @@ import { circularDepsRule } from "./engine/rules/circularDepsRule";
 import { calculateHealthScore } from "./engine/healthScore";
 import { labelHtmlForRule } from "./engine/rules/htmlRule";
 import { tabIndexMisuseRule } from "./engine/rules/tabIndexRule";
+import { inlineFunctionPropRule } from "./engine/rules/inlineFunctionPropRule";
+import { jsxLiteralPropRule } from "./engine/rules/jsxLiteralPropRule";
+import { indexAsKeyRule } from "./engine/rules/indexAsKeyRule";
+import { contextProviderValueRule } from "./engine/rules/contextProviderValueRule";
+import { KeyIndexQuickFixProvider } from "./codeActions/keyIndexQuickFixProvider";
 
 let lastIssues: Issue[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new IssuesProvider();
   vscode.window.registerTreeDataProvider("reactDoctorIssues", provider);
+
+  context.subscriptions.push(
+  vscode.commands.registerCommand("reactDoctor.toggleInfo", () => {
+    provider.toggleShowAllInfo();
+  })
+);
+
+  // Quick Fix command (command-based CodeAction)
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "reactDoctor.fixKeyIndex",
+      async (uri: vscode.Uri, replaceRange: vscode.Range, itemName: string) => {
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(uri, replaceRange, `{${itemName}.id}`);
+        await vscode.workspace.applyEdit(edit);
+      },
+    ),
+  );
+
+  // Quick Fix provider (no Diagnostics API)
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      [
+        { language: "typescriptreact" },
+        { language: "javascriptreact" },
+      ],
+      new KeyIndexQuickFixProvider(),
+      {
+        providedCodeActionKinds: [KeyIndexQuickFixProvider.kind],
+      },
+    ),
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("reactDoctor.scan", async () => {
@@ -33,12 +70,19 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: "React Doctor scanning..." },
         async () => {
-			const issues = await scanWorkspace(
-
-      
-				[bigFileRule, imgAltRule, circularDepsRule,labelHtmlForRule, tabIndexMisuseRule],
-				ctx
-			);
+          const issues = await scanWorkspace(
+            [
+              bigFileRule,
+              imgAltRule,
+              circularDepsRule,
+              inlineFunctionPropRule,
+              jsxLiteralPropRule,
+              indexAsKeyRule,
+              contextProviderValueRule,
+              tabIndexMisuseRule
+            ],
+            ctx
+          );
           const health = calculateHealthScore(issues);
 
 		  provider.setIssues(issues, health);
@@ -134,7 +178,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
   vscode.commands.registerCommand("reactDoctor.fixImgAlt", async (node: any) => {
-    // En menú contextual, VS Code pasa el TreeItem (IssueItem), no el Issue plano
     const issue: Issue | undefined = node?.issue ?? node;
 
     if (!issue?.filePath) {
@@ -155,7 +198,6 @@ export function activate(context: vscode.ExtensionContext) {
     const line = doc.lineAt(lineIndex);
     const lineText = line.text;
 
-    // Guard: si ya tiene alt, no hacemos nada
     if (!lineText.includes("<img")) {
       vscode.window.showInformationMessage("React Doctor: no <img> found on that line.");
       return;
@@ -165,7 +207,6 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Inserta alt justo después de <img
     const newLine = lineText.replace(/<img\b/, '<img alt=""');
 
     await editor.edit((editBuilder) => {

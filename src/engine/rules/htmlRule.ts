@@ -9,7 +9,7 @@ export const labelHtmlForRule: Rule = {
 
     async run(_ctx, files) {
         const issues: Issue[] = [];
-
+console.log("Run");
         for (const f of files) {
             if (!f.relPath.endsWith(".tsx") && !f.relPath.endsWith(".jsx")) {
                 continue;

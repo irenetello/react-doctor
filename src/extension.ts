@@ -7,6 +7,9 @@ import { imgAltRule } from "./engine/rules/imgAltRule";
 import { IssuesProvider } from "./views/issuesProvider";
 import { circularDepsRule } from "./engine/rules/circularDepsRule";
 import { calculateHealthScore } from "./engine/healthScore";
+import { missingAnchorHrefRule } from "./engine/rules/missingAnchorHrefRule";
+import { buttonAccessibleNameRule } from "./engine/rules/buttonAccessibleNameRule";
+import { keyboardNavigationRule } from "./engine/rules/keyboardNavigationRule";
 
 let lastIssues: Issue[] = [];
 
@@ -34,7 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const issues = await scanWorkspace(
 
       
-				[bigFileRule, imgAltRule, circularDepsRule],
+				[bigFileRule, imgAltRule, circularDepsRule, missingAnchorHrefRule, buttonAccessibleNameRule, keyboardNavigationRule],
 				ctx
 			);
           const health = calculateHealthScore(issues);

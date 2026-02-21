@@ -7,12 +7,22 @@ import { imgAltRule } from "./engine/rules/imgAltRule";
 import { IssuesProvider } from "./views/issuesProvider";
 import { circularDepsRule } from "./engine/rules/circularDepsRule";
 import { calculateHealthScore } from "./engine/healthScore";
+import { inlineFunctionPropRule } from "./engine/rules/inlineFunctionPropRule";
+import { jsxLiteralPropRule } from "./engine/rules/jsxLiteralPropRule";
+import { indexAsKeyRule } from "./engine/rules/indexAsKeyRule";
+import { contextProviderValueRule } from "./engine/rules/contextProviderValueRule";
 
 let lastIssues: Issue[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new IssuesProvider();
   vscode.window.registerTreeDataProvider("reactDoctorIssues", provider);
+
+  context.subscriptions.push(
+  vscode.commands.registerCommand("reactDoctor.toggleInfo", () => {
+    provider.toggleShowAllInfo();
+  })
+);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("reactDoctor.scan", async () => {
@@ -31,7 +41,18 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: "React Doctor scanning..." },
         async () => {
-          const issues = await scanWorkspace([bigFileRule, imgAltRule, circularDepsRule], ctx);
+          const issues = await scanWorkspace(
+            [
+              bigFileRule,
+              imgAltRule,
+              circularDepsRule,
+              inlineFunctionPropRule,
+              jsxLiteralPropRule,
+              indexAsKeyRule,
+              contextProviderValueRule,
+            ],
+            ctx
+          );
           const health = calculateHealthScore(issues);
 
           provider.setIssues(issues, health);

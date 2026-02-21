@@ -1,4 +1,5 @@
 import { Issue, Rule } from "../types";
+import { getOpeningTagName, isReactComponentTag } from "./jsxTagUtils";
 
 const INLINE_HANDLER = /\bon[A-Z][A-Za-z0-9]*\s*=\s*{\s*(?:\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>|function\b)/g;
 
@@ -13,6 +14,8 @@ const INLINE_HANDLER = /\bon[A-Z][A-Za-z0-9]*\s*=\s*{\s*(?:\([^)]*\)\s*=>|[A-Za-
  * - Only scans `.tsx` and `.jsx` files.
  * - Uses a regex to find `onXxx={...}` assignments where the value starts with
  *   an arrow function or `function` expression.
+ * - Reports only when the prop appears inside a React component tag (starts
+ *   with uppercase), ignoring native HTML tags.
  * - Reports one issue per match at the computed line number.
  *
  * Generated issue details:
@@ -31,12 +34,18 @@ export const inlineFunctionPropRule: Rule = {
 
       for (const m of f.content.matchAll(INLINE_HANDLER)) {
         const idx = m.index ?? 0;
+        const tagName = getOpeningTagName(f.content, idx);
+
+        if (!isReactComponentTag(tagName)) {
+          continue;
+        }
+
         const line = f.content.slice(0, idx).split(/\r?\n/).length;
 
         issues.push({
           id: `${inlineFunctionPropRule.id}:${f.relPath}:${line}`,
           severity: "INFO",
-          message: "Inline function prop can trigger unnecessary re-renders. Consider useCallback or moving handler outside render.",
+          message: "Inline function prop may cause avoidable re-renders in memoized children. Review if this is on a hot render path.",
           filePath: f.path,
           line,
           ruleId: inlineFunctionPropRule.id,
